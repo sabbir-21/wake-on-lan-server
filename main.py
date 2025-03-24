@@ -51,10 +51,18 @@ def send_telegram_message(chat_id, text):
 
 def check_telegram():
     global LAST_UPDATE_ID
-    url = f'https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?offset={LAST_UPDATE_ID + 1}'
+    #url = f'https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?offset={LAST_UPDATE_ID + 1}'
+    url = f'https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?offset={LAST_UPDATE_ID + 1}&timeout=25'
+
     
     try:
         response = urequests.get(url)
+        '''
+        if response.status_code == 429:
+            print("Rate limited! Waiting 10s...")
+            time.sleep(10)
+            return
+        '''
         data = ujson.loads(response.text)
         response.close()
         
@@ -97,7 +105,7 @@ def main():
     led.value(False)
     while True:
         check_telegram()
-        time.sleep(3)
+        time.sleep(5)
 
 if __name__ == '__main__':
     main()
