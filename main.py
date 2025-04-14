@@ -76,7 +76,7 @@ def send_telegram_message(chat_id, text):
     url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
     data = {'chat_id': chat_id, 'text': text}
     try:
-        r = urequests.post(url, json=data)
+        r = urequests.post(url, data=ujson.dumps(data), headers={'Content-Type': 'application/json'})
         r.close()
     except Exception as e:
         print("Telegram send error:", e)
@@ -88,22 +88,6 @@ def format_uptime(start_time):
     secs = seconds % 60
     return f"Uptime: {hours:02}:{minutes:02}:{secs:02}"
 
-def flush_telegram_updates():
-    """
-    Flush pending updates so that any previous commands (like /reboot) are cleared.
-    """
-    global LAST_UPDATE_ID
-    url = f'https://api.telegram.org/bot{BOT_TOKEN}/getUpdates'
-    try:
-        response = urequests.get(url, timeout=5)
-        data = ujson.loads(response.text)
-        response.close()
-        if data.get("ok") and len(data.get("result", [])) > 0:
-            # Set LAST_UPDATE_ID to the latest update id
-            LAST_UPDATE_ID = data["result"][-1]["update_id"]
-            print("Flushed updates. LAST_UPDATE_ID set to", LAST_UPDATE_ID)
-    except Exception as e:
-        print("Flush updates error:", e)
 
 def check_telegram(start_time):
     global LAST_UPDATE_ID
@@ -137,11 +121,6 @@ def check_telegram(start_time):
                 elif text == "/uptime":
                     send_telegram_message(chat_id, format_uptime(start_time))
 
-                elif text == "/reboot":
-                    send_telegram_message(chat_id, "Rebooting now...")
-                    time.sleep(2)
-                    reset()
-
                 else:
                     print("Unknown command.")
                     # Optionally send feedback:
@@ -163,7 +142,6 @@ def main():
     time.sleep(2)
     led.value(0)
     print("Bot ready.")
-    flush_telegram_updates()  # Clear pending updates on boot
     while True:
         try:
             ensure_wifi(wlan)
